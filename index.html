@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Dikz Audio Equalizer</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --cyan: #00eaff;
+    --blue: #008cff;
+    --purple: #a855f7;
+    --pink: #ec4899;
+    --panel: rgba(3, 12, 28, 0.78);
+    --border: rgba(0, 190, 255, .55);
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+
+    background:
+        linear-gradient(
+            rgba(9, 10, 15, .70),
+            rgba(9, 5, 15, .78)
+        ),
+        url("background.jpg") center/cover fixed;
+
+    overflow-x: hidden;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle at 20% 20%,
+            rgba(0, 234, 255, .12),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 80% 70%,
+            rgba(168, 85, 247, .12),
+            transparent 35%
+        );
+}
+
+/* ================= HEADER ================= */
+
+header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+
+    height: 72px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 25px;
+
+    background: rgba(0, 5, 15, .82);
+    backdrop-filter: blur(18px);
+
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 0 25px rgba(0, 180, 255, .15);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-icon {
+    font-size: 30px;
+    color: var(--cyan);
+    text-shadow: 0 0 15px var(--cyan);
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 21px;
+    letter-spacing: 2px;
+}
+
+.logo small {
+    display: block;
+    color: #8bdfff;
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+.header-status {
+    color: #7defff;
+    font-size: 12px;
+}
+
+/* ================= MAIN ================= */
+
+.container {
+    width: min(1250px, 94%);
+    margin: 25px auto;
+}
+
+/* ================= PANELS ================= */
+
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+
+    backdrop-filter: blur(14px);
+
+    box-shadow:
+        0 0 25px rgba(0, 150, 255, .12),
+        inset 0 0 25px rgba(0, 100, 255, .04);
+}
+
+.panel-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 17px 20px;
+
+    border-bottom: 1px solid rgba(0, 200, 255, .2);
+}
+
+.panel-title h2 {
+    margin: 0;
+    font-size: 15px;
+    letter-spacing: 1px;
+}
+
+.blue {
+    color: var(--cyan);
+    text-shadow: 0 0 10px var(--cyan);
+}
+
+/* ================= PLAYER ================= */
+
+.player-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr;
+    gap: 15px;
+}
+
+.player {
+    padding: 18px;
+}
+
+.file-input {
+    width: 100%;
+    padding: 12px;
+
+    border: 1px dashed var(--cyan);
+    border-radius: 10px;
+
+    color: white;
+    background: rgba(0, 20, 40, .7);
+}
+
+.file-input::file-selector-button {
+    background: var(--blue);
+    border: 0;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-right: 8px;
+}
+
+.song-name {
+    margin-top: 13px;
+    font-weight: bold;
+    color: var(--cyan);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+audio {
+    width: 100%;
+    margin-top: 12px;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+button {
+    border: 1px solid rgba(0, 220, 255, .5);
+    color: white;
+
+    background: rgba(0, 100, 180, .25);
+
+    padding: 10px 15px;
+    border-radius: 10px;
+
+    cursor: pointer;
+    font-weight: bold;
+
+    transition: .2s;
+}
+
+button:hover {
+    background: rgba(0, 190, 255, .3);
+    box-shadow: 0 0 15px rgba(0, 220, 255, .35);
+}
+
+button:active {
+    transform: scale(.95);
+}
+
+/* ================= VISUALIZER ================= */
+
+.visualizer {
+    height: 245px;
+    padding: 12px;
+    position: relative;
+}
+
+#visualizer {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    background: rgba(0, 5, 20, .65);
+}
+
+.visualizer-text {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 20px;
+
+    text-align: center;
+
+    color: rgba(255,255,255,.65);
+    font-size: 12px;
+}
+
+/* ================= MASTER ================= */
+
+.master {
+    padding: 20px;
+}
+
+.master-value {
+    text-align: center;
+    font-size: 28px;
+    color: var(--cyan);
+    text-shadow: 0 0 15px var(--cyan);
+}
+
+.slider {
+    width: 100%;
+    accent-color: var(--cyan);
+}
+
+.master-label {
+    color: #aaa;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+/* ================= EQ ================= */
+
+.eq-panel {
+    margin-top: 18px;
+}
+
+.eq-container {
+    padding: 20px;
+
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
+}
+
+.eq-band {
+    min-height: 270px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.eq-value {
+    color: var(--cyan);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.eq-slider {
+    writing-mode: vertical-lr;
+    direction: rtl;
+
+    width: 28px;
+    height: 185px;
+
+    accent-color: var(--cyan);
+}
+
+.freq {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #ddd;
+}
+
+/* ================= FREQUENCY POWER ================= */
+
+.power-panel {
+    margin-top: 18px;
+    padding-bottom: 20px;
+}
+
+.power-grid {
+    padding: 20px;
+
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+.power-name {
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.power-bar {
+    height: 10px;
+
+    background: rgba(255,255,255,.1);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.power-fill {
+    height: 100%;
+    width: 50%;
+
+    background: linear-gradient(
+        90deg,
+        var(--blue),
+        var(--cyan),
+        var(--purple)
+    );
+
+    box-shadow: 0 0 12px var(--cyan);
+
+    transition: width .15s;
+}
+
+.power-number {
+    margin-top: 5px;
+    text-align: right;
+
+    font-size: 11px;
+    color: var(--cyan);
+}
+
+/* ================= EFFECTS ================= */
+
+.effects {
+    margin-top: 18px;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.effect {
+    padding: 18px;
+}
+
+.effect h3 {
+    font-size: 13px;
+    margin-top: 0;
+}
+
+.effect-value {
+    text-align: center;
+    font-size: 22px;
+    color: var(--cyan);
+    margin: 10px 0;
+}
+
+/* ================= PRESETS ================= */
+
+.presets {
+    margin-top: 18px;
+    padding: 18px;
+}
+
+.preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.preset-buttons button.active {
+    background: var(--blue);
+    box-shadow: 0 0 18px rgba(0, 200, 255, .5);
+}
+
+/* ================= FOOTER ================= */
+
+footer {
+    text-align: center;
+    padding: 30px 10px;
+
+    color: #8ca0b5;
+    font-size: 12px;
+}
+
+footer strong {
+    color: var(--cyan);
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 850px) {
+
+    header {
+        padding: 0 15px;
+    }
+
+    .header-status {
+        display: none;
+    }
+
+    .player-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .eq-container {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    .power-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .effects {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .preset-buttons {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 500px) {
+
+    .container {
+        width: 95%;
+    }
+
+    .logo h1 {
+        font-size: 17px;
+    }
+
+    .eq-container {
+        grid-template-columns: repeat(5, 1fr);
+        padding: 10px;
+    }
+
+    .eq-slider {
+        height: 150px;
+    }
+
+    .effects {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+
+<body>
+
+<header>
+
+    <div class="logo">
+
+        <div class="logo-icon">
+            &lt;/&gt;
+        </div>
+
+        <div>
+            <h1>DIKZ AUDIO</h1>
+            <small>AUDIO EQUALIZER • BASS BOOSTER</small>
+        </div>
+
+    </div>
+
+    <div class="header-status" id="status">
+        ● SYSTEM READY
+    </div>
+
+</header>
+
+
+<div class="container">
+
+<!-- ================= PLAYER ================= -->
+
+<div class="player-grid">
+
+    <div class="panel player">
+
+        <div class="panel-title">
+            <h2 class="blue">🎵 PILIH LAGU</h2>
+        </div>
+
+        <input
+            class="file-input"
+            type="file"
+            id="fileInput"
+            accept="audio/*"
+        >
+
+        <div class="song-name" id="songName">
+            Belum ada lagu
+        </div>
+
+        <audio id="audio" controls></audio>
+
+        <div class="buttons">
+
+            <button onclick="playMusic()">▶</button>
+
+            <button onclick="pauseMusic()">Ⅱ</button>
+
+            <button onclick="stopMusic()">■</button>
+
+        </div>
+
+    </div>
+
+
+    <!-- VISUALIZER -->
+
+    <div class="panel visualizer">
+
+        <canvas id="visualizer"></canvas>
+
+        <div class="visualizer-text">
+            DIKZ AUDIO
+        </div>
+
+    </div>
+
+
+    <!-- MASTER -->
+
+    <div class="panel master">
+
+        <div class="panel-title">
+            <h2 class="blue">🔊 MASTER</h2>
+        </div>
+
+        <div class="master-value">
+            <span id="volumeValue">80</span>%
+        </div>
+
+        <input
+            class="slider"
+            id="volume"
+            type="range"
+            min="0"
+            max="100"
+            value="80"
+        >
+
+        <div class="master-label">
+            MASTER VOLUME
+        </div>
+
+        <br>
+
+        <div class="master-value">
+            <span id="balanceValue">0</span>
+        </div>
+
+        <input
+            class="slider"
+            id="balance"
+            type="range"
+            min="-1"
+            max="1"
+            step="0.01"
+            value="0"
+        >
+
+        <div class="master-label">
+            BALANCE L ← → R
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ================= EQ ================= -->
+
+<div class="panel eq-panel">
+
+    <div class="panel-title">
+
+        <h2 class="blue">
+            🎚️ 10 BAND EQUALIZER
+        </h2>
+
+        <span id="eqMode">
+            CUSTOM
+        </span>
+
+    </div>
+
+
+    <div class="eq-container">
+
+        <div class="eq-band">
+            <div class="eq-value" id="v0">0 dB</div>
+            <input class="eq-slider" id="eq0"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">31Hz</div>
+        </div>
+
+        <div class="eq-band">
+            <div class="eq-value" id="v1">0 dB</div>
+            <input class="eq-slider" id="eq1"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">63Hz</div>
+        </div>
+
+        <div class="eq-band">
+            <div class="eq-value" id="v2">0 dB</div>
+            <input class="eq-slider" id="eq2"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">125Hz</div>
+        </div>
+
+        <div class="eq-band">
+            <div class="eq-value" id="v3">0 dB</div>
+            <input class="eq-slider" id="eq3"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">250Hz</div>
+        </div>
+
+        <div class="eq-band">
+            <div class="eq-value" id="v4">0 dB</div>
+            <input class="eq-slider" id="eq4"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">500Hz</div>
+        </div>
+
+        <div class="eq-band">
+            <div class="eq-value" id="v5">0 dB</div>
+            <input class="eq-slider" id="eq5"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">1kHz</div>
+        </div>
+
+        <div class="eq-band">
+            <div class="eq-value" id="v6">0 dB</div>
+            <input class="eq-slider" id="eq6"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">2kHz</div>
+        </div>
+
+        <div class="eq-band">
+            <div class="eq-value" id="v7">0 dB</div>
+            <input class="eq-slider" id="eq7"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">4kHz</div>
+        </div>
+
+        <div class="eq-band">
+            <div class="eq-value" id="v8">0 dB</div>
+            <input class="eq-slider" id="eq8"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">8kHz</div>
+        </div>
+
+        <div class="eq-band">
+            <div class="eq-value" id="v9">0 dB</div>
+            <input class="eq-slider" id="eq9"
+                type="range" min="-12" max="12" value="0">
+            <div class="freq">16kHz</div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ================= FREQUENCY POWER ================= -->
+
+<div class="panel power-panel">
+
+    <div class="panel-title">
+
+        <h2 class="blue">
+            📊 FREQUENCY POWER
+        </h2>
+
+        <span>LIVE</span>
+
+    </div>
+
+
+    <div class="power-grid">
+
+        <div>
+            <div class="power-name">
+                BASS <small>20–60Hz</small>
+            </div>
+
+            <div class="power-bar">
+                <div class="power-fill" id="bassPower"></div>
+            </div>
+
+            <div class="power-number">
+                <span id="bassNumber">0</span>%
+            </div>
+        </div>
+
+
+        <div>
+            <div class="power-name">
+                LOW MID <small>60–250Hz</small>
+            </div>
+
+            <div class="power-bar">
+                <div class="power-fill" id="lowMidPower"></div>
+            </div>
+
+            <div class="power-number">
+                <span id="lowMidNumber">0</span>%
+            </div>
+        </div>
+
+
+        <div>
+            <div class="power-name">
+                MID <small>250Hz–2kHz</small>
+            </div>
+
+            <div class="power-bar">
+                <div class="power-fill" id="midPower"></div>
+            </div>
+
+            <div class="power-number">
+                <span id="midNumber">0</span>%
+            </div>
+        </div>
+
+
+        <div>
+            <div class="power-name">
+                HIGH MID <small>2–4kHz</small>
+            </div>
+
+            <div class="power-bar">
+                <div class="power-fill" id="highMidPower"></div>
+            </div>
+
+            <div class="power-number">
+                <span id="highMidNumber">0</span>%
+            </div>
+        </div>
+
+
+        <div>
+            <div class="power-name">
+                TREBLE <small>4–16kHz</small>
+            </div>
+
+            <div class="power-bar">
+                <div class="power-fill" id="treblePower"></div>
+            </div>
+
+            <div class="power-number">
+                <span id="trebleNumber">0</span>%
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ================= EFFECTS ================= -->
+
+<div class="effects">
+
+    <div class="panel effect">
+
+        <h3>🔊 BASS BOOST</h3>
+
+        <div class="effect-value">
+            <span id="bassBoostValue">0</span> dB
+        </div>
+
+        <input
+            class="slider"
+            id="bassBoost"
+            type="range"
+            min="0"
+            max="12"
+            value="0"
+        >
+
+        <small>0 → +12 dB</small>
+
+    </div>
+
+
+    <div class="panel effect">
+
+        <h3>✨ TREBLE</h3>
+
+        <div class="effect-value">
+            <span id="trebleBoostValue">0</span> dB
+        </div>
+
+        <input
+            class="slider"
+            id="trebleBoost"
+            type="range"
+            min="-12"
+            max="12"
+            value="0"
+        >
+
+        <small>-12 → +12 dB</small>
+
+    </div>
+
+
+    <div class="panel effect">
+
+        <h3>🎛️ MID</h3>
+
+        <div class="effect-value">
+            <span id="midBoostValue">0</span> dB
+        </div>
+
+        <input
+            class="slider"
+            id="midBoost"
+            type="range"
+            min="-12"
+            max="12"
+            value="0"
+        >
+
+        <small>-12 → +12 dB</small>
+
+    </div>
+
+
+    <div class="panel effect">
+
+        <h3>⚡ LOUDNESS</h3>
+
+        <div class="effect-value">
+            <span id="loudnessValue">0</span>%
+        </div>
+
+        <input
+            class="slider"
+            id="loudness"
+            type="range"
+            min="0"
+            max="100"
+            value="0"
+        >
+
+        <small>Dynamic boost</small>
+
+    </div>
+
+</div>
+
+
+<!-- ================= PRESETS ================= -->
+
+<div class="panel presets">
+
+    <div class="panel-title">
+        <h2 class="blue">⭐ PRESET EQ</h2>
+    </div>
+
+    <div class="preset-buttons">
+
+        <button onclick="preset('normal')">
+            🎵 Normal
+        </button>
+
+        <button onclick="preset('bass')">
+            🔊 Bass Boost
+        </button>
+
+        <button onclick="preset('vocal')">
+            🎤 Vocal
+        </button>
+
+        <button onclick="preset('treble')">
+            ✨ Treble
+        </button>
+
+    </div>
+
+</div>
+
+
+</div>
+
+
+<footer>
+
+    <strong>♪ DIKZBOTZ AUDIO SYSTEM</strong>
+
+    <br><br>
+
+    Better Sound • Better Vibes
+
+    <br>
+
+    Built By DIKZ AUDIO
+
+</footer>
+
+
+<script>
+
+/* =========================================
+   AUDIO ENGINE
+========================================= */
+
+const audio = document.getElementById("audio");
+
+let audioContext;
+let source;
+let analyser;
+let masterGain;
+let stereoPanner;
+
+let filters = [];
+
+let started = false;
+
+
+/* =========================================
+   EQUALIZER FREQUENCIES
+========================================= */
+
+const frequencies = [
+    31,
+    63,
+    125,
+    250,
+    500,
+    1000,
+    2000,
+    4000,
+    8000,
+    16000
+];
+
+
+/* =========================================
+   SETUP AUDIO
+========================================= */
+
+function setupAudio() {
+
+    if (started) return;
+
+    audioContext =
+        new (window.AudioContext ||
+        window.webkitAudioContext)();
+
+
+    source =
+        audioContext.createMediaElementSource(audio);
+
+
+    /* 10 BAND EQ */
+
+    frequencies.forEach((frequency) => {
+
+        let filter =
+            audioContext.createBiquadFilter();
+
+        filter.type = "peaking";
+
+        filter.frequency.value = frequency;
+
+        filter.Q.value = 1;
+
+        filter.gain.value = 0;
+
+        filters.push(filter);
+
+    });
+
+
+    /* MASTER */
+
+    masterGain =
+        audioContext.createGain();
+
+    masterGain.gain.value = .8;
+
+
+    /* BALANCE */
+
+    stereoPanner =
+        audioContext.createStereoPanner();
+
+    stereoPanner.pan.value = 0;
+
+
+    /* ANALYSER */
+
+    analyser =
+        audioContext.createAnalyser();
+
+    analyser.fftSize = 256;
+
+    analyser.smoothingTimeConstant = .8;
+
+
+    /* CONNECT */
+
+    let current = source;
+
+    filters.forEach(filter => {
+
+        current.connect(filter);
+
+        current = filter;
+
+    });
+
+
+    current
+        .connect(masterGain)
+        .connect(stereoPanner)
+        .connect(analyser)
+        .connect(audioContext.destination);
+
+
+    started = true;
+
+    drawVisualizer();
+
+}
+
+
+/* =========================================
+   FILE AUDIO
+========================================= */
+
+document
+.getElementById("fileInput")
+.addEventListener("change", function() {
+
+    const file = this.files[0];
+
+    if (!file) return;
+
+    const url =
+        URL.createObjectURL(file);
+
+    audio.src = url;
+
+    document.getElementById("songName")
+        .textContent = file.name;
+
+    document.getElementById("status")
+        .textContent = "● " + file.name;
+
+    setupAudio();
+
+});
+
+
+/* =========================================
+   PLAY
+========================================= */
+
+function playMusic() {
+
+    setupAudio();
+
+    if (audioContext.state === "suspended") {
+
+        audioContext.resume();
+
+    }
+
+    audio.play();
+
+}
+
+
+/* =========================================
+   PAUSE
+========================================= */
+
+function pauseMusic() {
+
+    audio.pause();
+
+}
+
+
+/* =========================================
+   STOP
+========================================= */
+
+function stopMusic() {
+
+    audio.pause();
+
+    audio.currentTime = 0;
+
+}
+
+
+/* =========================================
+   VOLUME
+========================================= */
+
+document
+.getElementById("volume")
+.addEventListener("input", function() {
+
+    setupAudio();
+
+    const value =
+        Number(this.value);
+
+    masterGain.gain.value =
+        value / 100;
+
+    document.getElementById("volumeValue")
+        .textContent = value;
+
+});
+
+
+/* =========================================
+   BALANCE
+========================================= */
+
+document
+.getElementById("balance")
+.addEventListener("input", function() {
+
+    setupAudio();
+
+    const value =
+        Number(this.value);
+
+    stereoPanner.pan.value =
+        value;
+
+    let display = "CENTER";
+
+    if (value < 0)
+        display = "L " +
+        Math.round(Math.abs(value) * 100);
+
+    if (value > 0)
+        display = "R " +
+        Math.round(value * 100);
+
+    document.getElementById("balanceValue")
+        .textContent = display;
+
+});
+
+
+/* =========================================
+   10 BAND EQ
+========================================= */
+
+for (let i = 0; i < 10; i++) {
+
+    const slider =
+        document.getElementById("eq" + i);
+
+    slider.addEventListener("input", function() {
+
+        setupAudio();
+
+        const value =
+            Number(this.value);
+
+        filters[i].gain.value =
+            value;
+
+        document.getElementById("v" + i)
+            .textContent =
+            (value > 0 ? "+" : "") +
+            value +
+            " dB";
+
+        document.getElementById("eqMode")
+            .textContent = "CUSTOM";
+
+    });
+
+}
+
+
+/* =========================================
+   BASS BOOST
+========================================= */
+
+document
+.getElementById("bassBoost")
+.addEventListener("input", function() {
+
+    setupAudio();
+
+    const value =
+        Number(this.value);
+
+    /* Tambahkan boost ke frekuensi bass */
+
+    filters[0].gain.value =
+        value;
+
+    filters[1].gain.value =
+        value;
+
+    document.getElementById("bassBoostValue")
+        .textContent = value;
+
+});
+
+
+/* =========================================
+   TREBLE BOOST
+========================================= */
+
+document
+.getElementById("trebleBoost")
+.addEventListener("input", function() {
+
+    setupAudio();
+
+    const value =
+        Number(this.value);
+
+    filters[8].gain.value =
+        value;
+
+    filters[9].gain.value =
+        value;
+
+    document.getElementById("trebleBoostValue")
+        .textContent = value;
+
+});
+
+
+/* =========================================
+   MID BOOST
+========================================= */
+
+document
+.getElementById("midBoost")
+.addEventListener("input", function() {
+
+    setupAudio();
+
+    const value =
+        Number(this.value);
+
+    filters[4].gain.value =
+        value;
+
+    filters[5].gain.value =
+        value;
+
+    document.getElementById("midBoostValue")
+        .textContent = value;
+
+});
+
+
+/* =========================================
+   LOUDNESS
+========================================= */
+
+document
+.getElementById("loudness")
+.addEventListener("input", function() {
+
+    const value =
+        Number(this.value);
+
+    document.getElementById("loudnessValue")
+        .textContent = value;
+
+});
+
+
+/* =========================================
+   PRESETS
+========================================= */
+
+function preset(type) {
+
+    setupAudio();
+
+    let values = [];
+
+    if (type === "normal") {
+
+        values =
+        [0,0,0,0,0,0,0,0,0,0];
+
+    }
+
+
+    if (type === "bass") {
+
+        values =
+        [8,10,7,4,1,0,0,0,-1,-2];
+
+    }
+
+
+    if (type === "vocal") {
+
+        values =
+        [-3,-2,-1,2,5,6,4,3,1,0];
+
+    }
+
+
+    if (type === "treble") {
+
+        values =
+        [-2,-2,-1,0,0,1,3,6,8,9];
+
+    }
+
+
+    values.forEach((value, i) => {
+
+        filters[i].gain.value =
+            value;
+
+        document.getElementById("eq" + i)
+            .value = value;
+
+        document.getElementById("v" + i)
+            .textContent =
+            (value > 0 ? "+" : "") +
+            value +
+            " dB";
+
+    });
+
+
+    document.getElementById("eqMode")
+        .textContent =
+        type.toUpperCase();
+
+}
+
+
+/* =========================================
+   VISUALIZER
+========================================= */
+
+const canvas =
+    document.getElementById("visualizer");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+function resizeCanvas() {
+
+    canvas.width =
+        canvas.clientWidth;
+
+    canvas.height =
+        canvas.clientHeight;
+
+}
+
+window.addEventListener(
+    "resize",
+    resizeCanvas
+);
+
+resizeCanvas();
+
+
+function drawVisualizer() {
+
+    requestAnimationFrame(
+        drawVisualizer
+    );
+
+
+    if (!analyser) return;
+
+
+    const bufferLength =
+        analyser.frequencyBinCount;
+
+    const dataArray =
+        new Uint8Array(bufferLength);
+
+
+    analyser.getByteFrequencyData(
+        dataArray
+    );
+
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    const barWidth =
+        canvas.width /
+        bufferLength *
+        1.8;
+
+
+    let x = 0;
+
+
+    for (
+        let i = 0;
+        i < bufferLength;
+        i++
+    ) {
+
+        const value =
+            dataArray[i];
+
+
+        const barHeight =
+            (value / 255) *
+            canvas.height;
+
+
+        const gradient =
+            ctx.createLinearGradient(
+                0,
+                canvas.height,
+                0,
+                0
+            );
+
+
+        gradient.addColorStop(
+            0,
+            "#008cff"
+        );
+
+        gradient.addColorStop(
+            .5,
+            "#00eaff"
+        );
+
+        gradient.addColorStop(
+            1,
+            "#a855f7"
+        );
+
+
+        ctx.fillStyle =
+            gradient;
+
+
+        ctx.shadowBlur = 12;
+
+        ctx.shadowColor =
+            "#00eaff";
+
+
+        ctx.fillRect(
+            x,
+            canvas.height - barHeight,
+            barWidth - 2,
+            barHeight
+        );
+
+
+        x += barWidth;
+
+    }
+
+    updateFrequencyPower(
+        dataArray
+    );
+
+}
+
+
+/* =========================================
+   FREQUENCY POWER
+========================================= */
+
+function updateFrequencyPower(data) {
+
+    function average(start, end) {
+
+        let total = 0;
+
+        let count = 0;
+
+        for (
+            let i = start;
+            i < end && i < data.length;
+            i++
+        ) {
+
+            total += data[i];
+
+            count++;
+
+        }
+
+        if (!count) return 0;
+
+        return Math.min(
+            100,
+            Math.round(
+                total / count / 255 * 100
+            )
+        );
+
+    }
+
+
+    const bass =
+        average(0, 4);
+
+    const lowMid =
+        average(4, 12);
+
+    const mid =
+        average(12, 35);
+
+    const highMid =
+        average(35, 55);
+
+    const treble =
+        average(55, 100);
+
+
+    setPower(
+        "bassPower",
+        "bassNumber",
+        bass
+    );
+
+    setPower(
+        "lowMidPower",
+        "lowMidNumber",
+        lowMid
+    );
+
+    setPower(
+        "midPower",
+        "midNumber",
+        mid
+    );
+
+    setPower(
+        "highMidPower",
+        "highMidNumber",
+        highMid
+    );
+
+    setPower(
+        "treblePower",
+        "trebleNumber",
+        treble
+    );
+
+}
+
+
+function setPower(
+    bar,
+    number,
+    value
+) {
+
+    document.getElementById(bar)
+        .style.width =
+        value + "%";
+
+    document.getElementById(number)
+        .textContent =
+        value;
+
+}
+
+</script>
+
+</body>
+</html>
